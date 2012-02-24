@@ -1,0 +1,28 @@
+{
+  "name": "s3_file",
+  "description": "Installs/Configures s3_file LWRP",
+  "long_description": "= DESCRIPTION:\nAn LWRP that can be used to fetch files from S3.\n\nI created this LWRP to solve the chicken-and-egg problem of fetching files from S3 on the first Chef run on a newly provisioned machine. Ruby libraries that are installed on that first run are not available to Chef during the run, so I couldn't use a library like Fog to get what I needed from S3.\n\nThis LWRP has no dependencies beyond the Ruby standard library, so it can be used on the first run of Chef.\n\n= REQUIREMENTS:\nAn Amazon Web Services account and something in S3 to fetch.\n\n= USAGE:\ns3_file acts like other file resources.  The only supported action is :create, which is the default.\n\nAttribute Parameters:\n \n* `aws_access_key_id` - your AWS access key id.\n* `aws_secret_access_key` - your AWS secret access key.\n* `bucket` - the bucket to pull from.\n* `remote_path` - the S3 key to pull.\n\nExample:\n\n    s3_file \"/tmp/somefile\" do\n    \tremote_path \"/my/s3/key\"\n    \tbucket \"my-s3-bucket\"\n    \taws_access_key_id \"mykeyid\"\n    \taws_aws_secret_access_key \"mykey\"\n    \taction :create\n    end\n\n\n",
+  "maintainer_email": "brandon.adams@me.com",
+  "license": "MIT",
+  "platforms": {
+  },
+  "dependencies": {
+  },
+  "recommendations": {
+  },
+  "suggestions": {
+  },
+  "conflicting": {
+  },
+  "providing": {
+  },
+  "replacing": {
+  },
+  "attributes": {
+  },
+  "groupings": {
+  },
+  "recipes": {
+  },
+  "version": "1.0.0"
+}
