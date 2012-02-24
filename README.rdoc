@@ -1,0 +1,31 @@
+= DESCRIPTION:
+An LWRP that can be used to fetch files from S3.
+
+I created this LWRP to solve the chicken-and-egg problem of fetching files from S3 on the first Chef run on a newly provisioned machine. Ruby libraries that are installed on that first run are not available to Chef during the run, so I couldn't use a library like Fog to get what I needed from S3.
+
+This LWRP has no dependencies beyond the Ruby standard library, so it can be used on the first run of Chef.
+
+= REQUIREMENTS:
+An Amazon Web Services account and something in S3 to fetch.
+
+= USAGE:
+s3_file acts like other file resources.  The only supported action is :create, which is the default.
+
+Attribute Parameters:
+ 
+* `aws_access_key_id` - your AWS access key id.
+* `aws_secret_access_key` - your AWS secret access key.
+* `bucket` - the bucket to pull from.
+* `remote_path` - the S3 key to pull.
+
+Example:
+
+    s3_file "/tmp/somefile" do
+    	remote_path "/my/s3/key"
+    	bucket "my-s3-bucket"
+    	aws_access_key_id "mykeyid"
+    	aws_aws_secret_access_key "mykey"
+    	action :create
+    end
+
+
