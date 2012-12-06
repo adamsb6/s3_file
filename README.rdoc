@@ -17,6 +17,9 @@ Attribute Parameters:
 * `aws_secret_access_key` - your AWS secret access key.
 * `bucket` - the bucket to pull from.
 * `remote_path` - the S3 key to pull.
+* `owner` - the owner of the file. (optional)
+* `group` - the group owner of the file. (optional)
+* `mode` - the octal mode of the file. (optional)
 
 Example:
 
@@ -25,6 +28,9 @@ Example:
     	bucket "my-s3-bucket"
     	aws_access_key_id "mykeyid"
     	aws_aws_secret_access_key "mykey"
+    	owner "me"
+    	group "mygroup"
+    	mode "0644"
     	action :create
     end
 
