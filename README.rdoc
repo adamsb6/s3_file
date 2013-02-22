@@ -27,7 +27,7 @@ Example:
     	remote_path "/my/s3/key"
     	bucket "my-s3-bucket"
     	aws_access_key_id "mykeyid"
-    	aws_aws_secret_access_key "mykey"
+    	aws_secret_access_key "mykey"
     	owner "me"
     	group "mygroup"
     	mode "0644"
