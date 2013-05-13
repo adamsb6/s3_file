@@ -15,8 +15,8 @@ module S3File
     auth_string = 'AWS %s:%s' % [aws_access_key_id,signed_base64]
 
     response = RestClient.head('https://%s.s3.amazonaws.com%s' % [bucket,path], :date => now, :authorization => auth_string)
-
-    return response.headers['ETag']
+    
+    return response.headers[:etag].gsub('"','')
   end
   
   def get_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key)    
