@@ -6,8 +6,14 @@ action :create do
   new_resource = @new_resource
   download = true
   
+  # handle key specified without leading slash
+  remote_path = new_resource.remote_path
+  if remote_path.chars.first != '/'
+    remote_path = "/#{remote_path}"
+  end
+    
   if ::File.exists? new_resource.path
-    s3_md5 = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.remote_path, new_resource.aws_access_key_id, new_resource.aws_secret_access_key)
+    s3_md5 = S3FileLib::get_md5_from_s3(new_resource.bucket, remote_path, new_resource.aws_access_key_id, new_resource.aws_secret_access_key)
     
     current_md5 = Digest::MD5.hexdigest(::File.read(new_resource.path))
     
@@ -21,7 +27,7 @@ action :create do
   end
   
   if download
-    body = S3FileLib::get_from_s3(new_resource.bucket, new_resource.remote_path, new_resource.aws_access_key_id, new_resource.aws_secret_access_key).body
+    body = S3FileLib::get_from_s3(new_resource.bucket, remote_path, new_resource.aws_access_key_id, new_resource.aws_secret_access_key).body
 
     file new_resource.path do
       owner new_resource.owner if new_resource.owner
