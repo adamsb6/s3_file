@@ -3,8 +3,8 @@ require 'time'
 require 'openssl'
 require 'base64'
 
-module S3File
-  def get_md5_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key)
+module S3FileLib
+  def self.get_md5_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key)
     now = Time.now().utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
     string_to_sign = "HEAD\n\n\n%s\n/%s%s" % [now,bucket,path]
 
@@ -19,7 +19,7 @@ module S3File
     return response.headers[:etag].gsub('"','')
   end
   
-  def get_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key)    
+  def self.get_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key)    
     now = Time.now().utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
     string_to_sign = "GET\n\n\n%s\n/%s%s" % [now,bucket,path]
 

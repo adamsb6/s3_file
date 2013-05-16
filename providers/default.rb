@@ -1,4 +1,4 @@
-include S3File
+#include S3File
 
 require 'digest/md5'
 
@@ -7,7 +7,7 @@ action :create do
   download = true
   
   if ::File.exists? new_resource.path
-    s3_md5 = get_md5_from_s3(new_resource.bucket, new_resource.remote_path, new_resource.aws_access_key_id, new_resource.aws_secret_access_key)
+    s3_md5 = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.remote_path, new_resource.aws_access_key_id, new_resource.aws_secret_access_key)
     
     current_md5 = Digest::MD5.hexdigest(::File.read(new_resource.path))
     
@@ -21,7 +21,7 @@ action :create do
   end
   
   if download
-    body = get_from_s3(new_resource.bucket, new_resource.remote_path, new_resource.aws_access_key_id, new_resource.aws_secret_access_key).body
+    body = S3FileLib::get_from_s3(new_resource.bucket, new_resource.remote_path, new_resource.aws_access_key_id, new_resource.aws_secret_access_key).body
 
     file new_resource.path do
       owner new_resource.owner if new_resource.owner
