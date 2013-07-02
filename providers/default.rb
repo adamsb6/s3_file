@@ -36,5 +36,6 @@ action :create do
       action :create
       content body
     end
+    @new_resource.updated_by_last_action(true)
   end
 end
