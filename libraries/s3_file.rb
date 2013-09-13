@@ -4,6 +4,8 @@ require 'openssl'
 require 'base64'
 
 module S3FileLib
+  RestClient.proxy = ENV['http_proxy']
+
   def self.build_headers(date, authorization, token)
     headers = {
       :date => date,
