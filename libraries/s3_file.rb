@@ -4,8 +4,6 @@ require 'openssl'
 require 'base64'
 
 module S3FileLib
-  RestClient.proxy = ENV['http_proxy']
-
   def self.build_headers(date, authorization, token)
     headers = {
       :date => date,
@@ -39,9 +37,10 @@ module S3FileLib
     now, auth_string = get_s3_auth("GET", bucket,path,aws_access_key_id,aws_secret_access_key, token)
     
     headers = build_headers(now, auth_string, token)
-    response = RestClient.get('https://%s.s3.amazonaws.com%s' % [bucket,path], headers)
+#    response = RestClient.get('https://%s.s3.amazonaws.com%s' % [bucket,path], headers)
+    response = RestClient::Request.execute(:method => :get, :url => 'https://%s.s3.amazonaws.com%s' % [bucket,path], :raw_response => true, :headers => headers)
 
-    return response.body
+    return response
   end
 
   def self.get_s3_auth(method, bucket,path,aws_access_key_id,aws_secret_access_key, token)

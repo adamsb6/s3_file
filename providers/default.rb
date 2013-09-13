@@ -50,15 +50,18 @@ action :create do
   end
   
   if download
-    body = S3FileLib::get_from_s3(new_resource.bucket, remote_path, aws_access_key_id, aws_secret_access_key, token).body
+    response = S3FileLib::get_from_s3(new_resource.bucket, remote_path, aws_access_key_id, aws_secret_access_key, token)
 
-    file new_resource.path do
-      owner new_resource.owner if new_resource.owner
-      group new_resource.group if new_resource.group
-      mode new_resource.mode if new_resource.mode
-      action :create
-      content body
-    end
+    # not simply using the file resource here because we would have to buffer whole file into memory in order to set content
+    # this solves https://github.com/adamsb6/s3_file/issues/15
+    mode = new_resource.mode || 0644
+    owner = new_resource.owner || ENV['user']
+    group = new_resource.group || ENV['user']
+    
+    ::FileUtils.mv response.file, new_resource.path
+    ::FileUtils.chown owner, group, [ new_resource.path ]
+    ::FileUtils.chmod mode, [ new_resource.path ]
+    
     @new_resource.updated_by_last_action(true)
   end
 end
