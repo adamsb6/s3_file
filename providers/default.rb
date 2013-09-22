@@ -58,7 +58,7 @@ action :create do
     owner = new_resource.owner || ENV['user']
     group = new_resource.group || ENV['user']
     
-    ::FileUtils.mv response.file, new_resource.path
+    ::FileUtils.mv response.file.path, new_resource.path
     ::FileUtils.chown owner, group, [ new_resource.path ]
     ::FileUtils.chmod mode, [ new_resource.path ]
     
