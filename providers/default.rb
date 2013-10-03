@@ -55,6 +55,8 @@ action :create do
     # not simply using the file resource here because we would have to buffer whole file into memory in order to set content
     # this solves https://github.com/adamsb6/s3_file/issues/15
     mode = new_resource.mode || 0644
+    mode = mode.is_a?(String) ? mode.to_i : mode
+    
     owner = new_resource.owner || ENV['user']
     group = new_resource.group || ENV['user']
     
