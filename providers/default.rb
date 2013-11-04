@@ -61,8 +61,12 @@ action :create do
     group = new_resource.group || ENV['user']
     
     ::FileUtils.mv response.file.path, new_resource.path
-    ::FileUtils.chown owner, group, [ new_resource.path ]
-    ::FileUtils.chmod mode, [ new_resource.path ]
+    file new_resource.path do
+      owner owner
+      group group
+      mode mode
+      action :create
+    end
     
     @new_resource.updated_by_last_action(true)
   end
