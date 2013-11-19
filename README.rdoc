@@ -18,7 +18,7 @@ If credentials are not provided, s3_file will attempt to use the first instance 
 s3_file acts like other file resources.  The only supported action is :create, which is the default.
 
 Attribute Parameters:
- 
+
 * `aws_access_key_id` - your AWS access key id. (optional)
 * `aws_secret_access_key` - your AWS secret access key. (optional)
 * `token` - token used for temporary IAM credentials. (optional)
