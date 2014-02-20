@@ -40,5 +40,10 @@ Example:
     	mode "0644"
     	action :create
     end
+	
+== MD5 and Multi-Part Upload ==
+s3_file compares the MD5 hash of a local file, if present, and the ETag header of the S3 object.  If they do not match, then the remote object will be downloaded and notifiations will be fired.
 
+In most cases, the ETag of an S3 object will be identical to its MD5 hash.  However, if the file was uploaded to S3 via multi-part upload, then the ETag will be set to the MD5 hash of the first uploaded part.  In these cases, MD5 of the local file and remote object will never match.
 
+To work around this issue, set an X-Amz-Meta-Digest tag on your S3 object the value set to the MD5 of the entire object.  s3_file will then use that value in place of the ETag value, and will skip downloading in case the MD5 of the local file matches the value of the X-Amz-Meta-Digest header.
