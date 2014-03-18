@@ -1,3 +1,7 @@
+2014-03-18  version 2.3.3
+=========================
+* Merged pull request https://github.com/adamsb6/s3_file/pull/24.  This corrects documentation for use of X-Amz-Meta-Digest to identify md5 in multi-part uploads.
+
 2014-02-20  version 2.3.2
 =========================
 
