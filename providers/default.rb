@@ -14,6 +14,7 @@ action :create do
   aws_access_key_id = new_resource.aws_access_key_id
   aws_secret_access_key = new_resource.aws_secret_access_key
   token = new_resource.token
+  decryption_key = new_resource.decryption_key
 
   # if credentials not set, try instance profile
   if aws_access_key_id.nil? && aws_secret_access_key.nil? && token.nil?
@@ -50,6 +51,15 @@ action :create do
     # not simply using the file resource here because we would have to buffer
     # whole file into memory in order to set content this solves
     # https://github.com/adamsb6/s3_file/issues/15
+    unless decryption_key.nil?
+      begin
+        response = aes256_decrypt(decryption_key,response)
+      rescue OpenSSL::Cipher::CipherError => e
+        Chef::Log.error("Error decrypting #{name}, is decryption key correct?")
+        Chef::Log.error("Error message: #{e.message}")
+        raise e
+      end
+    end
     ::FileUtils.mv(response.file.path, new_resource.path)
   end
 

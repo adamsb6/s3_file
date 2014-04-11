@@ -8,6 +8,7 @@ attribute :token, :kind_of => String, :default => nil
 attribute :owner, :kind_of => [String, NilClass], :default => nil
 attribute :group, :kind_of => [String, NilClass], :default => nil
 attribute :mode, :kind_of => [String, Integer, NilClass], :default => nil
+attribute :decryption_key, :kind_of => String, :default => nil
 
 def initialize(*args)
   super

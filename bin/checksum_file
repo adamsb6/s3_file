@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+# checksum_file -s "source_file_path" -d "digest_destination_file"
+
+require "digest"
+require "trollop"
+
+BLOCKSIZE_TO_READ = 1024 * 1000
+
+opts = Trollop::options do
+  opt :source_file_path, "Path to file to digest", :type => :string
+  opt :destination_file_path, "Destination path for SHA256 digest file."
+end
+
+Trollop::die "source_file_path required" if !opts[:source_file_path]
+Trollop::die :source_file_path, "must exist" unless File.exist?(opts[:source_file_path]) if opts[:source_to_encode]
+
+def sha256_digest(file_path, output_path)
+  sha256 = Digest::SHA256.new
+
+  File.open(file_path, "rb") do |fi|
+    while buffer = fi.read(BLOCKSIZE_TO_READ)
+      sha256.update(buffer)
+    end
+  end
+
+  if output_path.nil?
+    $stdout.write(sha256)
+  else
+    digest_file = Tempfile.new("digest")
+    File.open(digest_file, "wb") do |df|
+      df.write(sha256)
+    end
+    ::FileUtils.mv(digest_file.path, output_path)
+  end
+end
+
+if opts[:destination_file_path]
+  sha256_digest(opts[:source_file_path], opts[:destination_file_path])
+else
+  sha256_digest(opts[:source_file_path], nil)
+end

@@ -4,6 +4,7 @@ require 'openssl'
 require 'base64'
 
 module S3FileLib
+  BLOCKSIZE_TO_READ = 1024 * 1000
   RestClient.proxy = ENV['http_proxy']
   
   def self.build_headers(date, authorization, token)
@@ -62,5 +63,25 @@ module S3FileLib
     auth_string = 'AWS %s:%s' % [aws_access_key_id,signed_base64]
         
     [now,auth_string]
+  end
+
+  def self.aes256_decrypt(key, file)
+    Chef::Log.debug("Decrypting S3 file.")
+    key = key.strip
+    require "digest"
+    key = Digest::SHA256.digest(key) if(key.kind_of?(String) && 32 != key.bytesize)
+    aes = OpenSSL::Cipher.new('AES-256-CBC')
+    aes.decrypt
+    aes.key = key
+    decrypt_file = Tempfile.new("chef-s3-decrypt")
+    File.open(file, "rb") do |fi|
+      while buffer = fi.read(BLOCKSIZE_TO_READ)
+        aes.update(buffer)
+        decrypt_file.write buffer
+      end
+    end
+    decrypt_file + aes.final
+    decrypt_file.close
+    return decrypt_file
   end
 end
