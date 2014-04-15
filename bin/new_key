@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-#This will generate a new 256-bit key
-
-openssl rand -hex 32
