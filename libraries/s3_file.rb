@@ -80,8 +80,8 @@ module S3FileLib
         decrypt_file.write buffer
       end
     end
-    decrypt_file + aes.final
+    decrypt_file.write aes.final
     decrypt_file.close
-    return decrypt_file
+    decrypt_file
   end
 end
