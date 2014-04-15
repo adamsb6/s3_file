@@ -53,7 +53,7 @@ action :create do
     # https://github.com/adamsb6/s3_file/issues/15
     unless decryption_key.nil?
       begin
-        response = aes256_decrypt(decryption_key,response)
+        response = S3FileLib::aes256_decrypt(decryption_key,response)
       rescue OpenSSL::Cipher::CipherError => e
         Chef::Log.error("Error decrypting #{name}, is decryption key correct?")
         Chef::Log.error("Error message: #{e.message}")
