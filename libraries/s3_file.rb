@@ -74,14 +74,47 @@ module S3FileLib
     aes.decrypt
     aes.key = key
     decrypt_file = Tempfile.new("chef-s3-decrypt")
+    File.open(decrypt_file, "wb") do |df|
+      File.open(file, "rb") do |fi|
+        while buffer = fi.read(BLOCKSIZE_TO_READ)
+          df.write aes.update(buffer)
+        end
+      end
+      df.write aes.final
+    end
+    decrypt_file
+  end
+
+  def self.verify_sha256_checksum(checksum, file)
+    recipe_sha256 = checksum
+    local_sha256 = Digest::SHA256.new
+
     File.open(file, "rb") do |fi|
       while buffer = fi.read(BLOCKSIZE_TO_READ)
-        aes.update(buffer)
-        decrypt_file.write buffer
+        local_sha256.update buffer
       end
     end
-    decrypt_file.write aes.final
-    decrypt_file.close
-    decrypt_file
+
+    Chef::Log.debug "sha256 provided #{recipe_sha256}"
+    Chef::Log.debug "sha256 of local object is #{local_sha256.hexdigest}"
+
+    local_sha256.hexdigest == recipe_sha256
+  end
+
+  def self.verify_md5_checksum(checksum, file)
+    s3_md5 = checksum
+    local_md5 = Digest::MD5.new
+
+    # buffer the checksum which should save RAM consumption
+    File.open(file, "rb") do |fi|
+      while buffer = fi.read(BLOCKSIZE_TO_READ)
+        local_md5.update buffer
+      end
+    end
+
+    Chef::Log.debug "md5 of remote object is #{s3_md5}"
+    Chef::Log.debug "md5 of local object is #{local_md5.hexdigest}"
+
+    local_md5.hexdigest == s3_md5
   end
 end

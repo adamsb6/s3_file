@@ -33,15 +33,30 @@ action :create do
   end
 
   if ::File.exists?(new_resource.path)
-    s3_md5 = S3FileLib::get_md5_from_s3(new_resource.bucket, remote_path, aws_access_key_id, aws_secret_access_key, token)
-    local_md5 = Digest::MD5.hexdigest(::File.read(new_resource.path))
+    if decryption_key.nil?
+      if new_resource.decrypted_file_checksum.nil?
+        s3_md5 = S3FileLib::get_md5_from_s3(bucket, remote_path, access_key_id, secret_access_key, token)
 
-    Chef::Log.debug "md5 of S3 object is #{s3_md5}"
-    Chef::Log.debug "md5 of local object is #{local_md5}"
-
-    if local_md5 == s3_md5
-      Chef::Log.debug 'Skipping download, md5sum of local file matches file in S3.'
-      download = false
+        if S3FileLib::verify_md5_checksum(s3_md5, new_resource.path)
+          Chef::Log.debug 'Skipping download, md5sum of local file matches file in S3.'
+          download = false
+        end
+      #we have a decryption key so we must switch to the sha256 checksum
+      else
+        if S3FileLib::verify_sha256_checksum(new_resource.decrypted_file_checksum, new_resource.path)
+          Chef::Log.debug 'Skipping download, sha256 of local file matches recipe.'
+          download = false
+        end
+      end
+      # since our resource is a decrypted file, we must use the
+      # checksum provided by the resource to compare to the local file
+    else
+      unless new_resource.decrypted_file_checksum.nil?
+        if S3FileLib::verify_sha256_checksum(new_resource.decrypted_file_checksum, new_resource.path)
+          Chef::Log.debug 'Skipping download, sha256 of local file matches recipe.'
+          download = false
+        end
+      end
     end
   end
 
@@ -55,10 +70,13 @@ action :create do
       begin
         decrypted_file = S3FileLib::aes256_decrypt(decryption_key,response.file.path)
       rescue OpenSSL::Cipher::CipherError => e
+
         Chef::Log.error("Error decrypting #{name}, is decryption key correct?")
         Chef::Log.error("Error message: #{e.message}")
+
         raise e
       end
+
       ::FileUtils.mv(decrypted_file.path, new_resource.path)
     else
       ::FileUtils.mv(response.file.path, new_resource.path)
