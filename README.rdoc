@@ -72,3 +72,14 @@ To create your cipher, run `bin/s3_crypto -g > my_new_key` and a new 256-bit (32
 Try `bin/s3_crypto -g > my_new_key`.
 
 You can use the utility `bin/s3_crypto` to encrypt files prior to uploading to S3 and to decrypt files prior to make sure the encryption is working.
+
+= ChefSpec matcher
+s3_file comes with a matcher to use in {ChefSpec}[https://github.com/sethvargo/chefspec].
+
+This spec checks the code from the USAGE example above:
+
+    it 'downloads some file from s3' do
+        expect(chef_run).to create_s3_file('/tmp/somefile')
+            .with(bucket: "my-s3-bucket", remote_path: "/my/s3/key")
+    end
+
