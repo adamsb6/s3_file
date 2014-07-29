@@ -56,7 +56,7 @@ module S3FileLib
     
     string_to_sign += "/%s%s" % [bucket,path]
 
-    digest = digest = OpenSSL::Digest::Digest.new('sha1')
+    digest = OpenSSL::Digest.new('SHA1')
     signed = OpenSSL::HMAC.digest(digest, aws_secret_access_key, string_to_sign)
     signed_base64 = Base64.encode64(signed)
 
