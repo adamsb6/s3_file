@@ -23,6 +23,7 @@ Attribute Parameters:
 * `aws_secret_access_key` - your AWS secret access key. (optional)
 * `token` - token used for temporary IAM credentials. (optional)
 * `bucket` - the bucket to pull from.
+* `s3_url` - Custom S3 URL. (optional)
 * `remote_path` - the S3 key to pull.
 * `owner` - the owner of the file. (optional)
 * `group` - the group owner of the file. (optional)
@@ -36,6 +37,7 @@ Example:
     	bucket "my-s3-bucket"
     	aws_access_key_id "mykeyid"
     	aws_secret_access_key "mykey"
+        s3_url "https://bucket.s3.amazonaws.com"
     	owner "me"
     	group "mygroup"
     	mode "0644"

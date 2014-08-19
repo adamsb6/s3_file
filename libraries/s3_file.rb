@@ -19,15 +19,18 @@ module S3FileLib
     return headers
   end
   
-  def self.get_md5_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key,token)
-    return get_digests_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key,token)["md5"]
+  def self.get_md5_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)
+    return get_digests_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)["md5"]
   end
   
-  def self.get_digests_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key,token)
+  def self.get_digests_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)
     now, auth_string = get_s3_auth("HEAD", bucket,path,aws_access_key_id,aws_secret_access_key, token)
     
     headers = build_headers(now, auth_string, token)
-    response = RestClient.head('https://%s.s3.amazonaws.com%s' % [bucket,path], headers)
+
+    url = "https://#{bucket}.s3.amazonaws.com" if url.nil?
+
+    response = RestClient.head("#{url}#{path}", headers)
     
     etag = response.headers[:etag].gsub('"','')
     digest = response.headers[:x_amz_meta_digest]
@@ -36,12 +39,14 @@ module S3FileLib
     return {"md5" => etag}.merge(digests)
   end
 
-  def self.get_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key,token)   
+  def self.get_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)   
     now, auth_string = get_s3_auth("GET", bucket,path,aws_access_key_id,aws_secret_access_key, token)
+
+    url = "https://#{bucket}.s3.amazonaws.com" if url.nil?
     
     headers = build_headers(now, auth_string, token)
 #    response = RestClient.get('https://%s.s3.amazonaws.com%s' % [bucket,path], headers)
-    response = RestClient::Request.execute(:method => :get, :url => 'https://%s.s3.amazonaws.com%s' % [bucket,path], :raw_response => true, :headers => headers)
+    response = RestClient::Request.execute(:method => :get, :url => "#{url}#{path}", :raw_response => true, :headers => headers)
 
     return response
   end
