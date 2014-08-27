@@ -37,7 +37,7 @@ Example:
     	bucket "my-s3-bucket"
     	aws_access_key_id "mykeyid"
     	aws_secret_access_key "mykey"
-        s3_url "https://bucket.s3.amazonaws.com"
+        s3_url "https://s3.amazonaws.com/bucket"
     	owner "me"
     	group "mygroup"
     	mode "0644"
