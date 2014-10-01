@@ -1,3 +1,8 @@
+2014-10-01  version 2.5.0
+=========================
+  * Merged https://github.com/adamsb6/s3_file/pull/31.  This provides an optional s3_url value for a recipe to use S3 buckets other than US based ones.
+  * Merged https://github.com/adamsb6/s3_file/pull/29.  Add ChefSpec matcher for testing.
+
 2014-04-17  version 2.4.0
 =========================
 * Merged pull request https://github.com/adamsb6/s3_file/pull/25.  This provides new functionality to automatically decrypt an encrypted file uploaded to S3.
