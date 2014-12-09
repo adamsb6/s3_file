@@ -1,3 +1,5 @@
+$:.unshift *Dir[File.expand_path('../../files/default/vendor/gems/**/lib', __FILE__)]
+
 require 'rest-client'
 require 'time'
 require 'openssl'
