@@ -23,15 +23,14 @@ module S3FileLib
   end
   
   def self.get_digests_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)
-    require 'rest-client'
-    RestClient.proxy = ENV['http_proxy']
+    client = self.client
     now, auth_string = get_s3_auth("HEAD", bucket,path,aws_access_key_id,aws_secret_access_key, token)
     
     headers = build_headers(now, auth_string, token)
 
     url = "https://#{bucket}.s3.amazonaws.com" if url.nil?
 
-    response = RestClient.head("#{url}#{path}", headers)
+    response = client.head("#{url}#{path}", headers)
     
     etag = response.headers[:etag].gsub('"','')
     digest = response.headers[:x_amz_meta_digest]
@@ -41,14 +40,13 @@ module S3FileLib
   end
 
   def self.get_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)
-    require 'rest-client'
-    RestClient.proxy = ENV['http_proxy']
+    client = self.client
     now, auth_string = get_s3_auth("GET", bucket,path,aws_access_key_id,aws_secret_access_key, token)
 
     url = "https://#{bucket}.s3.amazonaws.com" if url.nil?
     
     headers = build_headers(now, auth_string, token)
-    response = RestClient::Request.execute(:method => :get, :url => "#{url}#{path}", :raw_response => true, :headers => headers)
+    response = client::Request.execute(:method => :get, :url => "#{url}#{path}", :raw_response => true, :headers => headers)
 
     return response
   end
@@ -123,5 +121,11 @@ module S3FileLib
     Chef::Log.debug "md5 of local object is #{local_md5.hexdigest}"
 
     local_md5.hexdigest == s3_md5
+  end
+
+  def self.client
+    require 'rest-client'
+    RestClient.proxy = ENV['http_proxy']
+    RestClient
   end
 end
