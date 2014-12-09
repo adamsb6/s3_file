@@ -1,10 +1,13 @@
 require 'digest/md5'
-require 'rest-client'
 require 'json'
 
 use_inline_resources
 
 action :create do
+  rest_client_gem = Chef::Resource::ChefGem.new('rest-client', @run_context)
+  rest_client_gem.run_action :install
+  require 'rest-client'
+  RestClient.proxy = ENV['http_proxy']
   download = true
 
   # handle key specified without leading slash
