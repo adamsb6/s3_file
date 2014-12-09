@@ -1,3 +1,7 @@
+2014-12-09 version 2.5.1
+========================
+  * Merged https://github.com/adamsb6/s3_file/pull/36. Fix compatibility with Chef 12.
+
 2014-10-01  version 2.5.0
 =========================
   * Merged https://github.com/adamsb6/s3_file/pull/31.  This provides an optional s3_url value for a recipe to use S3 buckets other than US based ones.
