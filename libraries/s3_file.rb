@@ -46,7 +46,21 @@ module S3FileLib
     url = "https://#{bucket}.s3.amazonaws.com" if url.nil?
     
     headers = build_headers(now, auth_string, token)
-    response = client::Request.execute(:method => :get, :url => "#{url}#{path}", :raw_response => true, :headers => headers)
+    retries = 5
+    for attempts in 0..5
+      begin
+        response = client::Request.execute(:method => :get, :url => "#{url}#{path}", :raw_response => true, :headers => headers)
+        break
+      rescue => e
+        if attempts < retries
+          Chef::Log.warn e.response
+          next
+        else
+          Chef::Log.fatal e.response
+          raise e
+        end
+      end
+    end
 
     return response
   end
