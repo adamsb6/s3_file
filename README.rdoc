@@ -23,6 +23,7 @@ Attribute Parameters:
 * `aws_secret_access_key` - your AWS secret access key. (optional)
 * `token` - token used for temporary IAM credentials. (optional)
 * `bucket` - the bucket to pull from.
+* `s3_url` - Custom S3 URL. (optional)
 * `remote_path` - the S3 key to pull.
 * `owner` - the owner of the file. (optional)
 * `group` - the group owner of the file. (optional)
@@ -36,13 +37,13 @@ Example:
     	bucket "my-s3-bucket"
     	aws_access_key_id "mykeyid"
     	aws_secret_access_key "mykey"
+    	s3_url "https://s3.amazonaws.com/bucket"
     	owner "me"
     	group "mygroup"
     	mode "0644"
     	action :create
     	decryption_key "my SHA256 digest key"
     	decrypted_file_checksum "SHA256 hex digest of decrypted file"
-
     end
 	
 = MD5 and Multi-Part Upload:
@@ -72,3 +73,14 @@ To create your cipher, run `bin/s3_crypto -g > my_new_key` and a new 256-bit (32
 Try `bin/s3_crypto -g > my_new_key`.
 
 You can use the utility `bin/s3_crypto` to encrypt files prior to uploading to S3 and to decrypt files prior to make sure the encryption is working.
+
+= ChefSpec matcher
+s3_file comes with a matcher to use in {ChefSpec}[https://github.com/sethvargo/chefspec].
+
+This spec checks the code from the USAGE example above:
+
+    it 'downloads some file from s3' do
+        expect(chef_run).to create_s3_file('/tmp/somefile')
+            .with(bucket: "my-s3-bucket", remote_path: "/my/s3/key")
+    end
+

@@ -1,46 +1,9 @@
-gems = %w( rest-client )
-
-# =============================================================================
-# Check for gems we need
-require 'rubygems'
-require 'rubygems/gem_runner'
-require 'rubygems/exceptions'
-gems.each{ |g|
-  begin
-    require g
-  rescue Gem::LoadError
-    # not installed
-    #puts %x(gem install #{g})
-    begin
-      puts "Need to install #{g}"
-      args = ['install', g, '--no-rdoc', '--no-ri']
-      Gem::GemRunner.new.run args
-      Gem.clearpaths
-      require g
-      puts "Loaded #{g} ..."
-    rescue Gem::SystemExitException => e
-      unless e.exit_code == 0
-        puts "ERROR: Failed to install #{g}. #{e.message}"
-        raise e
-      end
-    end
-  rescue Gem::SystemExitException => e
-    unless e.exit_code == 0
-      puts "ERROR: Failed to install #{g}. #{e.message}"
-      raise e
-    end
-  rescue Exception => e
-    puts "ERROR: #{e.class.name} #{e.message}"
-  end
-}
-
 require 'time'
 require 'openssl'
 require 'base64'
 
 module S3FileLib
-  BLOCKSIZE_TO_READ = 1024 * 1000
-  RestClient.proxy = ENV['http_proxy']
+  BLOCKSIZE_TO_READ = 1024 * 1000 unless const_defined?(:BLOCKSIZE_TO_READ)
   
   def self.build_headers(date, authorization, token)
     headers = {
@@ -54,15 +17,19 @@ module S3FileLib
     return headers
   end
   
-  def self.get_md5_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key,token)
-    return get_digests_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key,token)["md5"]
+  def self.get_md5_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)
+    return get_digests_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)["md5"]
   end
   
-  def self.get_digests_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key,token)
+  def self.get_digests_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)
+    client = self.client
     now, auth_string = get_s3_auth("HEAD", bucket,path,aws_access_key_id,aws_secret_access_key, token)
     
     headers = build_headers(now, auth_string, token)
-    response = RestClient.head('https://%s.s3.amazonaws.com%s' % [bucket,path], headers)
+
+    url = "https://#{bucket}.s3.amazonaws.com" if url.nil?
+
+    response = client.head("#{url}#{path}", headers)
     
     etag = response.headers[:etag].gsub('"','')
     digest = response.headers[:x_amz_meta_digest]
@@ -71,12 +38,28 @@ module S3FileLib
     return {"md5" => etag}.merge(digests)
   end
 
-  def self.get_from_s3(bucket,path,aws_access_key_id,aws_secret_access_key,token)   
+  def self.get_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token)
+    client = self.client
     now, auth_string = get_s3_auth("GET", bucket,path,aws_access_key_id,aws_secret_access_key, token)
+
+    url = "https://#{bucket}.s3.amazonaws.com" if url.nil?
     
     headers = build_headers(now, auth_string, token)
-#    response = RestClient.get('https://%s.s3.amazonaws.com%s' % [bucket,path], headers)
-    response = RestClient::Request.execute(:method => :get, :url => 'https://%s.s3.amazonaws.com%s' % [bucket,path], :raw_response => true, :headers => headers)
+    retries = 5
+    for attempts in 0..5
+      begin
+        response = client::Request.execute(:method => :get, :url => "#{url}#{path}", :raw_response => true, :headers => headers)
+        break
+      rescue => e
+        if attempts < retries
+          Chef::Log.warn e.response
+          next
+        else
+          Chef::Log.fatal e.response
+          raise e
+        end
+      end
+    end
 
     return response
   end
@@ -91,7 +74,7 @@ module S3FileLib
     
     string_to_sign += "/%s%s" % [bucket,path]
 
-    digest = OpenSSL::Digest.new('SHA1')
+    digest = OpenSSL::Digest.new('sha1')
     signed = OpenSSL::HMAC.digest(digest, aws_secret_access_key, string_to_sign)
     signed_base64 = Base64.encode64(signed)
 
@@ -151,5 +134,11 @@ module S3FileLib
     Chef::Log.debug "md5 of local object is #{local_md5.hexdigest}"
 
     local_md5.hexdigest == s3_md5
+  end
+
+  def self.client
+    require 'rest-client'
+    RestClient.proxy = ENV['http_proxy']
+    RestClient
   end
 end
