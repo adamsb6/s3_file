@@ -1,4 +1,39 @@
-require 'rest-client'
+gems = %w( rest-client )
+
+# =============================================================================
+# Check for gems we need
+require 'rubygems'
+require 'rubygems/gem_runner'
+require 'rubygems/exceptions'
+gems.each{ |g|
+  begin
+    require g
+  rescue Gem::LoadError
+    # not installed
+    #puts %x(gem install #{g})
+    begin
+      puts "Need to install #{g}"
+      args = ['install', g, '--no-rdoc', '--no-ri']
+      Gem::GemRunner.new.run args
+      Gem.clearpaths
+      require g
+      puts "Loaded #{g} ..."
+    rescue Gem::SystemExitException => e
+      unless e.exit_code == 0
+        puts "ERROR: Failed to install #{g}. #{e.message}"
+        raise e
+      end
+    end
+  rescue Gem::SystemExitException => e
+    unless e.exit_code == 0
+      puts "ERROR: Failed to install #{g}. #{e.message}"
+      raise e
+    end
+  rescue Exception => e
+    puts "ERROR: #{e.class.name} #{e.message}"
+  end
+}
+
 require 'time'
 require 'openssl'
 require 'base64'
