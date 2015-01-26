@@ -43,25 +43,25 @@ module S3FileLib
     now, auth_string = get_s3_auth("GET", bucket,path,aws_access_key_id,aws_secret_access_key, token)
 
     url = "https://#{bucket}.s3.amazonaws.com" if url.nil?
-    
+
     headers = build_headers(now, auth_string, token)
     retries = 5
     for attempts in 0..5
       begin
         response = client::Request.execute(:method => :get, :url => "#{url}#{path}", :raw_response => true, :headers => headers)
-        break
+        return response
+          # break
       rescue => e
+        msg = e.respond_to?(:response) ? e.response : e.to_s
         if attempts < retries
-          Chef::Log.warn e.response
+          Chef::Log.warn msg
           next
         else
-          Chef::Log.fatal e.response
+          Chef::Log.fatal msg
           raise e
         end
       end
     end
-
-    return response
   end
 
   def self.get_s3_auth(method, bucket,path,aws_access_key_id,aws_secret_access_key, token)
