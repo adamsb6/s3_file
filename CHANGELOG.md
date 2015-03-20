@@ -1,3 +1,13 @@
+2015-03-20 version 2.5.3
+========================
+  * Fix deprecated digest call.
+  * Merged https://github.com/adamsb6/s3_file/pull/41. README enhancements. @eherot
+  * Merged https://github.com/adamsb6/s3_file/pull/43. Performance fix for rest client install. @scottymarshall
+
+  *version 2.5.2*
+
+  * Add retries for downloads
+
 2014-12-09 version 2.5.1
 ========================
   * Merged https://github.com/adamsb6/s3_file/pull/36. Fix compatibility with Chef 12.
