@@ -1,4 +1,4 @@
-2015-06-03 version TBD
+2015-06-03 version 2.5.4
 ======================
   * Adds version constraint on rest-client to 1.7.3.
   * Adds a cookbook attribute for overwriting the rest-client gem version.
