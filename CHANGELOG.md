@@ -1,3 +1,8 @@
+2015-06-03 version TBD
+======================
+  * Adds version constraint on rest-client to 1.7.3.
+  * Adds a cookbook attribute for overwriting the rest-client gem version.
+
 2015-03-20 version 2.5.3
 ========================
   * Fix deprecated digest call.
