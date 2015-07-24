@@ -84,3 +84,14 @@ This spec checks the code from the USAGE example above:
             .with(bucket: "my-s3-bucket", remote_path: "/my/s3/key")
     end
 
+= Testing
+
+This cookbook has Test Kitchen integration tests. To test, create a .s3.yml file with the following S3 details.
+
+    file: file
+    bucket: bucket
+    region: xx-xxxx-x
+    access_key: XXXXXXXXXXXXXXXXXXXX
+    secret_key: XXXXXXXXXXXXXXXXXXXX
+
+If you're using the ChefDK then type `chef exec kitchen test`, otherwise `kitchen test`.
