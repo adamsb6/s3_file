@@ -139,15 +139,16 @@ module S3FileLib
         url = uri.to_s
         retry
       rescue => e
-        msg = e.respond_to?(:response) ? e.response : e.to_s
-        raise e unless e.respond_to? :response
-        if attempts < retries
-          Chef::Log.warn msg
-          next
-        else
-          Chef::Log.fatal msg
-          raise e
+        if e.respond_to? :response
+          msg = e.response
+          if attempts < retries
+            Chef::Log.warn msg
+            next
+          else
+            Chef::Log.fatal msg
+          end
         end
+        raise e
       end
     end
   end
