@@ -87,7 +87,15 @@ module S3FileLib
   end
 
   def self.do_request(method, url, bucket, path, aws_access_key_id, aws_secret_access_key, token, region)
-    url = "https://#{bucket}.s3.amazonaws.com" if url.nil?
+    if url.nil?
+      url = 'https://' + (
+        if bucket =~ /\./
+          "s3.amazonaws.com/#{bucket}"
+        else
+          "#{bucket}.s3.amazonaws.com"
+        end
+      )
+    end
 
     with_region_detect(region) do |real_region|
       client.reset_before_execution_procs
