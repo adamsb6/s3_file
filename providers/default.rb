@@ -4,8 +4,7 @@ require 'json'
 use_inline_resources
 
 action :create do
-  rest_client_gem = Chef::Resource::ChefGem.new('rest-client', @run_context)
-  rest_client_gem.run_action :install
+  @run_context.include_recipe 's3_file::dependencies'
   client = S3FileLib::client
   download = true
 
