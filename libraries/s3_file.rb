@@ -130,7 +130,8 @@ module S3FileLib
     for attempts in 0..retries
       begin
         response = do_request("GET", url, bucket, path, aws_access_key_id, aws_secret_access_key, token, region)
-        break
+        return response
+        # break
       rescue client::MovedPermanently, client::Found, client::TemporaryRedirect => e
         uri = URI.parse(e.response.header['location'])
         path = uri.path
@@ -138,18 +139,18 @@ module S3FileLib
         url = uri.to_s
         retry
       rescue => e
-        raise e unless e.respond_to? :response
-        if attempts < retries
-          Chef::Log.warn e.response
-          next
-        else
-          Chef::Log.fatal e.response
-          raise e
+        if e.respond_to? :response
+          msg = e.response
+          if attempts < retries
+            Chef::Log.warn msg
+            next
+          else
+            Chef::Log.fatal msg
+          end
         end
+        raise e
       end
     end
-
-    return response
   end
 
   def self.aes256_decrypt(key, file)
