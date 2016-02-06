@@ -120,22 +120,33 @@ module S3FileLib
     get_digests_from_s3(bucket, url, path, aws_access_key_id, aws_secret_access_key, token, region)["md5"]
   end
 
-  def self.get_digests_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token, region)
-    response = do_request("HEAD", url, bucket, path, aws_access_key_id, aws_secret_access_key, token, region)
 
-    etag = response.headers[:etag].gsub('"','')
-    digest = response.headers[:x_amz_meta_digest]
+  def self.get_digests_from_headers(headers)
+    etag = headers[:etag].gsub('"','')
+    digest = headers[:x_amz_meta_digest]
     digests = digest.nil? ? {} : Hash[digest.split(",").map {|a| a.split("=")}]
-
     return {"md5" => etag}.merge(digests)
   end
 
-  def self.get_from_s3(bucket, url, path, aws_access_key_id, aws_secret_access_key, token, region = nil)
+  def self.get_digests_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token, region)
+    response = do_request("HEAD", url, bucket, path, aws_access_key_id, aws_secret_access_key, token, region)
+    return self.get_digests_from_headers(response.headers)
+  end
+
+  def self.get_from_s3(bucket, url, path, aws_access_key_id, aws_secret_access_key, token, region = nil, verify_md5=true)
     response = nil
     retries = 5
     for attempts in 0..retries
       begin
         response = do_request("GET", url, bucket, path, aws_access_key_id, aws_secret_access_key, token, region)
+
+        if verify_md5
+          md5 = self.get_digests_from_headers(response.headers)["md5"]
+          if not self.verify_md5_checksum(md5,response.file.path)
+            raise "unable to validate md5 checksum of downloaded object"
+          end
+        end
+
         return response
         # break
       rescue client::MovedPermanently, client::Found, client::TemporaryRedirect => e
