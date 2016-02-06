@@ -62,7 +62,7 @@ action :create do
   end
 
   if download
-    response = S3FileLib::get_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token)
+    response = S3FileLib::get_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, new_resource.verify_md5)
 
     # not simply using the file resource here because we would have to buffer
     # whole file into memory in order to set content this solves
