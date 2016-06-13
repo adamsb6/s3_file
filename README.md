@@ -75,7 +75,7 @@ Try `bin/s3_crypto -g > my_new_key`.
 You can use the utility `bin/s3_crypto` to encrypt files prior to uploading to S3 and to decrypt files prior to make sure the encryption is working.
 
 #ChefSpec matcher
-s3_file comes with a matcher to use in {ChefSpec}[https://github.com/sethvargo/chefspec].
+s3_file comes with a matcher to use in [ChefSpec](https://github.com/sethvargo/chefspec).
 
 This spec checks the code from the USAGE example above:
 
