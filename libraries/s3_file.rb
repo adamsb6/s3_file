@@ -216,7 +216,6 @@ module S3FileLib
     require 'rest-client'
     RestClient.proxy = ENV['http_proxy']
     RestClient.proxy = ENV['https_proxy']
-    RestClient.proxy = ENV['no_proxy']
     RestClient
   end
 end
