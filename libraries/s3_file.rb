@@ -122,14 +122,18 @@ module S3FileLib
 
   def self.get_md5_from_s3(bucket, url, path, *args, public_bucket)
     if public_bucket
-      get_digests_from_s3(bucket, url, path)["md5"]
+      get_digests_from_s3(bucket, url, path, public_bucket)["md5"]
     else
-      get_digests_from_s3(bucket, url, path, args[0], args[1], args[2], args[3])["md5"]
+      get_digests_from_s3(bucket, url, path, args[0], args[1], args[2], args[3], public_bucket)["md5"]
     end
   end
 
-  def self.get_digests_from_s3(bucket, url, path, *args)
-    response = do_request("HEAD", url, bucket, path, args[0], args[1], args[2], args[3])
+  def self.get_digests_from_s3(bucket, url, path, *args, public_bucket)
+    if public_bucket
+      response = do_request("HEAD", url, bucket, path, public_bucket)
+    else
+      response = do_request("HEAD", url, bucket, path, args[0], args[1], args[2], args[3], public_bucket)
+    end
 
     etag = response.headers[:etag].gsub('"','')
     digest = response.headers[:x_amz_meta_digest]
@@ -144,10 +148,8 @@ module S3FileLib
     for attempts in 0..retries
       begin
         if public_bucket
-          puts 'public'
           response = do_request("GET", url, bucket, path, public_bucket)
         else
-          puts 'private'
           response = do_request("GET", url, bucket, path, args[0], args[1], args[2], args[3], public_bucket)
         end
         return response
