@@ -4,9 +4,9 @@ require 'base64'
 
 module S3FileLib
 
-
   module SigV2
-    def self.sign(request, bucket, path, aws_access_key_id, aws_secret_access_key, token)
+  def self.sign(request, bucket, path, *args)
+      token = args[2] if args[2]
       now = Time.now().utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
       string_to_sign = "#{request.method}\n\n\n%s\n" % [now]
 
@@ -15,10 +15,10 @@ module S3FileLib
       string_to_sign += "/%s%s" % [bucket,path]
 
       digest = OpenSSL::Digest.new('sha1')
-      signed = OpenSSL::HMAC.digest(digest, aws_secret_access_key, string_to_sign)
+      signed = OpenSSL::HMAC.digest(digest, args[1], string_to_sign)
       signed_base64 = Base64.encode64(signed)
 
-      auth_string = 'AWS %s:%s' % [aws_access_key_id, signed_base64]
+      auth_string = 'AWS %s:%s' % [args[0], signed_base64]
 
       request["date"] = now
       request["authorization"] = auth_string.strip
@@ -28,16 +28,17 @@ module S3FileLib
   end
 
   module SigV4
-    def self.sigv4(string_to_sign, aws_secret_access_key, region, date, serviceName)
-      k_date    = OpenSSL::HMAC.digest("sha256", "AWS4" + aws_secret_access_key, date)
-      k_region  = OpenSSL::HMAC.digest("sha256", k_date, region)
+    def self.sigv4(string_to_sign, *args, date, serviceName, public_bucket)
+      k_date    = OpenSSL::HMAC.digest("sha256", "AWS4" + args[0], date)
+      k_region  = OpenSSL::HMAC.digest("sha256", k_date, args[1])
       k_service = OpenSSL::HMAC.digest("sha256", k_region, serviceName)
       k_signing = OpenSSL::HMAC.digest("sha256", k_service, "aws4_request")
 
       OpenSSL::HMAC.hexdigest("sha256", k_signing, string_to_sign)
     end
 
-    def self.sign(request, params, region, aws_access_key_id, aws_secret_access_key, token = nil)
+    def self.sign(request, params, *args)
+      token = args[3] if args[3]
       url = URI.parse(params[:url])
       content = request.body || ""
 
@@ -60,11 +61,11 @@ module S3FileLib
       signed_headers = request.each_name.map(&:downcase).sort.join(";")
 
       canonical_request = [request.method, url.path, canonical_query_string, canonical_headers, signed_headers, body_digest].join("\n")
-      scope = format("%s/%s/%s/%s", date, region, service, "aws4_request")
-      credential = [aws_access_key_id, scope].join("/")
+      scope = format("%s/%s/%s/%s", date, args[0], service, "aws4_request")
+      credential = [args[1], scope].join("/")
 
       string_to_sign = "#{algorithm}\n#{time}\n#{scope}\n#{Digest::SHA256.hexdigest(canonical_request)}"
-      signed_hex = sigv4(string_to_sign, aws_secret_access_key, region, date, service)
+      signed_hex = sigv4(string_to_sign, args[2], args[0], date, service)
       auth_string = "#{algorithm} Credential=#{credential}, SignedHeaders=#{signed_headers}, Signature=#{signed_hex}"
 
       request["Authorization"] = auth_string
@@ -86,16 +87,19 @@ module S3FileLib
     end
   end
 
-  def self.do_request(method, url, bucket, path, aws_access_key_id, aws_secret_access_key, token, region)
+  def self.do_request(method, url, bucket, path, *args, public_bucket)
+    region = args[3]
     url = build_endpoint_url(bucket, region) if url.nil?
 
     with_region_detect(region) do |real_region|
       client.reset_before_execution_procs
       client.add_before_execution_proc do |request, params|
-        if real_region.nil?
-          SigV2.sign(request, bucket, path, aws_access_key_id, aws_secret_access_key, token)
-        else
-          SigV4.sign(request, params, real_region, aws_access_key_id, aws_secret_access_key, token)
+        if !public_bucket
+          if real_region.nil?
+            SigV2.sign(request, bucket, path, args[0], args[1], args[2])
+          else
+            SigV4.sign(request, params, real_region, args[0], args[1], args[2])
+          end
         end
       end
       client::Request.execute(:method => method, :url => "#{url}#{path}", :raw_response => true)
@@ -116,12 +120,20 @@ module S3FileLib
     end
   end
 
-  def self.get_md5_from_s3(bucket, url, path, aws_access_key_id, aws_secret_access_key, token, region = nil)
-    get_digests_from_s3(bucket, url, path, aws_access_key_id, aws_secret_access_key, token, region)["md5"]
+  def self.get_md5_from_s3(bucket, url, path, *args, public_bucket)
+    if public_bucket
+      get_digests_from_s3(bucket, url, path, public_bucket)["md5"]
+    else
+      get_digests_from_s3(bucket, url, path, args[0], args[1], args[2], args[3], public_bucket)["md5"]
+    end
   end
 
-  def self.get_digests_from_s3(bucket,url,path,aws_access_key_id,aws_secret_access_key,token, region)
-    response = do_request("HEAD", url, bucket, path, aws_access_key_id, aws_secret_access_key, token, region)
+  def self.get_digests_from_s3(bucket, url, path, *args, public_bucket)
+    if public_bucket
+      response = do_request("HEAD", url, bucket, path, public_bucket)
+    else
+      response = do_request("HEAD", url, bucket, path, args[0], args[1], args[2], args[3], public_bucket)
+    end
 
     etag = response.headers[:etag].gsub('"','')
     digest = response.headers[:x_amz_meta_digest]
@@ -130,12 +142,16 @@ module S3FileLib
     return {"md5" => etag}.merge(digests)
   end
 
-  def self.get_from_s3(bucket, url, path, aws_access_key_id, aws_secret_access_key, token, region = nil)
+  def self.get_from_s3(bucket, url, path, *args, public_bucket)
     response = nil
     retries = 5
     for attempts in 0..retries
       begin
-        response = do_request("GET", url, bucket, path, aws_access_key_id, aws_secret_access_key, token, region)
+        if public_bucket
+          response = do_request("GET", url, bucket, path, public_bucket)
+        else
+          response = do_request("GET", url, bucket, path, args[0], args[1], args[2], args[3], public_bucket)
+        end
         return response
         # break
       rescue client::MovedPermanently, client::Found, client::TemporaryRedirect => e

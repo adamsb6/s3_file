@@ -24,6 +24,7 @@ Attribute Parameters:
 * `token` - token used for temporary IAM credentials. (optional)
 * `bucket` - the bucket to pull from.
 * `s3_url` - Custom S3 URL. If specified this URL *must* include the bucket name at the end. (optional)
+* `public_bucket` - Set to true if the bucket is public, defaults to false (optional)
 * `remote_path` - the S3 key to pull.
 * `owner` - the owner of the file. (optional)
 * `group` - the group owner of the file. (optional)
