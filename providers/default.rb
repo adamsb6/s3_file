@@ -24,7 +24,7 @@ action :create do
   aws_secret_access_key = new_resource.aws_secret_access_key
   token = new_resource.token
   decryption_key = new_resource.decryption_key
-  region = new_resource.region
+  region = new_resource.aws_region
 
   # if credentials not set, try instance profile
   if aws_access_key_id.nil? && aws_secret_access_key.nil? && token.nil?
