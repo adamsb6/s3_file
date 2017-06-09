@@ -36,9 +36,20 @@ action :create do
       instance_profile_name = instance_profiles.split.first
       instance_profile = JSON.load(client.get(instance_profile_base_url + instance_profile_name))
 
-      aws_access_key_id = instance_profile['AccessKeyId']
-      aws_secret_access_key = instance_profile['SecretAccessKey']
-      token = instance_profile['Token']
+    aws_access_key_id = instance_profile['AccessKeyId']
+    aws_secret_access_key = instance_profile['SecretAccessKey']
+    token = instance_profile['Token']
+
+    # now try to auto-detect the region from the instance
+      if region.nil?
+        dynamic_doc_base_url = 'http://169.254.169.254/latest/dynamic/instance-identity/document'
+        begin
+          dynamic_doc = JSON.load(client.get(dynamic_doc_base_url))
+          region = dynamic_doc['region']
+        rescue Exception => e
+          Chef::Log.debug "Unable to auto-detect region from instance-identity document: #{e.message}"
+        end
+      end
     end
   end
 
