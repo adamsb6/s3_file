@@ -14,6 +14,7 @@ action :create do
   # we need credentials to be mutable
   aws_access_key_id = new_resource.aws_access_key_id
   aws_secret_access_key = new_resource.aws_secret_access_key
+  aws_region = new_resource.aws_region
   token = new_resource.token
   decryption_key = new_resource.decryption_key
 
@@ -31,12 +32,23 @@ action :create do
     aws_access_key_id = instance_profile['AccessKeyId']
     aws_secret_access_key = instance_profile['SecretAccessKey']
     token = instance_profile['Token']
+      
+    # now try to auto-detect the region from the instance
+    if aws_region.nil?
+      dynamic_doc_base_url = 'http://169.254.169.254/latest/dynamic/instance-identity/document'
+      begin
+        dynamic_doc = JSON.load(client.get(dynamic_doc_base_url))
+        aws_region = dynamic_doc['region']
+      rescue Exception => e
+        Chef::Log.debug "Unable to auto-detect region from instance-identity document: #{e.message}"
+      end
+    end
   end
 
   if ::File.exists?(new_resource.path)
     if decryption_key.nil?
       if new_resource.decrypted_file_checksum.nil?
-        s3_md5 = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token)
+        s3_md5 = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, aws_region)
 
         if S3FileLib::verify_md5_checksum(s3_md5, new_resource.path)
           Chef::Log.debug 'Skipping download, md5sum of local file matches file in S3.'
@@ -62,7 +74,7 @@ action :create do
   end
 
   if download
-    response = S3FileLib::get_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token)
+    response = S3FileLib::get_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, aws_region)
 
     # not simply using the file resource here because we would have to buffer
     # whole file into memory in order to set content this solves
