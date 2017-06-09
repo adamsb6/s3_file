@@ -8,8 +8,8 @@ action :create do
   client = S3FileLib::client
   download = true
 
-  # handle key specified without leading slash
-  remote_path = ::File.join('', new_resource.remote_path)
+  # handle key specified without leading slash, and support URL encoding when necessary.
+  remote_path = ::File.join('', new_resource.remote_path).split('/').map{|x| CGI.escape(x)}.join('/')
 
   # we need credentials to be mutable
   aws_access_key_id = new_resource.aws_access_key_id
