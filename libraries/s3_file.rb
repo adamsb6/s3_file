@@ -197,6 +197,15 @@ module S3FileLib
 
   def self.verify_md5_checksum(checksum, file)
     s3_md5 = checksum
+    local_md5 = buffered_md5_checksum(file)
+
+    Chef::Log.debug "md5 of remote object is #{s3_md5}"
+    Chef::Log.debug "md5 of local object is #{local_md5.hexdigest}"
+
+    local_md5.hexdigest == s3_md5
+  end
+
+  def self.buffered_md5_checksum(file)
     local_md5 = Digest::MD5.new
 
     # buffer the checksum which should save RAM consumption
@@ -205,11 +214,23 @@ module S3FileLib
         local_md5.update buffer
       end
     end
+    local_md5
+  end
 
-    Chef::Log.debug "md5 of remote object is #{s3_md5}"
-    Chef::Log.debug "md5 of local object is #{local_md5.hexdigest}"
+  def self.verify_etag(etag, file)
+    catalog.fetch(file, nil) == etag
+  end
 
-    local_md5.hexdigest == s3_md5
+  def self.catalog_path
+    File.join(Chef::Config[:file_cache_path], 's3_file_etags.json')
+  end
+
+  def self.catalog
+    File.exist?(catalog_path) ? JSON.parse(IO.read(catalog_path)) : {}
+  end
+
+  def self.write_catalog(data)
+    File.open(catalog_path, 'w', 0644) { |f| f.write(JSON.dump(data)) }
   end
 
   def self.client

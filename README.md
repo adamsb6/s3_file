@@ -10,7 +10,9 @@ An Amazon Web Services account and something in S3 to fetch.
 
 Multi-part S3 uploads do not put the MD5 of the content in the ETag header. If x-amz-meta-digest is provided in User-Defined Metadata on the S3 Object it is processed as if it were a Digest header (RFC 3230).
 
-The MD5 of the local file will be checked against the MD5 from x-amz-meta-digest if it is present.  It not it will check against the ETag.  If there is no match or the local file is absent it will be downloaded.
+The MD5 of the local file will be checked against the MD5 from x-amz-meta-digest if it is present.  If not it will check against the ETag.  If there is no match or the local file is absent it will be downloaded.
+
+By default, a catalog file in Chef's cache path will be kept for all downloaded files tracking their etag and md5 at time of download. If either of these don't match, the file will be downloaded. To disable this behavior, set `node['s3_file']['use_catalog']` to `false`.
 
 If credentials are not provided, s3_file will attempt to use the first instance profile associated with the instance. See documentation at http://docs.aws.amazon.com/IAM/latest/UserGuide/instance-profiles.html for more on instance profiles.
 
@@ -45,7 +47,7 @@ Example:
     	decryption_key "my SHA256 digest key"
     	decrypted_file_checksum "SHA256 hex digest of decrypted file"
     end
-	
+
 #MD5 and Multi-Part Upload
 s3_file compares the MD5 hash of a local file, if present, and the ETag header of the S3 object.  If they do not match, then the remote object will be downloaded and notifiations will be fired.
 
