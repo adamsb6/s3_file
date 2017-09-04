@@ -1,5 +1,4 @@
 .DS_Store
-metadata.json
 .kitchen.local.yml
 .kitchen
 .s3.yml
