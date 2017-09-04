@@ -34,11 +34,11 @@ action :create do
   end
 
   if ::File.exists?(new_resource.path)
+    s3_etag = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token)
+
     if decryption_key.nil?
       if new_resource.decrypted_file_checksum.nil?
-        s3_md5 = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token)
-
-        if S3FileLib::verify_md5_checksum(s3_md5, new_resource.path)
+        if S3FileLib::verify_md5_checksum(s3_etag, new_resource.path)
           Chef::Log.debug 'Skipping download, md5sum of local file matches file in S3.'
           download = false
         end
@@ -57,6 +57,16 @@ action :create do
           Chef::Log.debug 'Skipping download, sha256 of local file matches recipe.'
           download = false
         end
+      end
+    end
+
+    # Don't download if content and etag match prior download
+    if node['s3_file']['use_catalog']
+      catalog_data = S3FileLib::catalog.fetch(new_resource.path, nil)
+      existing_file_md5 = S3FileLib::buffered_md5_checksum(new_resource.path)
+      if catalog_data && existing_file_md5 == catalog_data['local_md5'] && s3_etag == catalog_data['etag']
+        Chef::Log.debug 'Skipping download, md5 of local file and etag matches prior download.'
+        download = false
       end
     end
   end
@@ -78,16 +88,34 @@ action :create do
         raise e
       end
 
-      ::FileUtils.mv(decrypted_file.path, new_resource.path)
+      downloaded_file = decrypted_file
     else
-      ::FileUtils.mv(response.file.path, new_resource.path)
+      downloaded_file = response.file
     end
+
+    # Write etag and md5 to catalog for future reference
+    if node['s3_file']['use_catalog']
+      catalog = S3FileLib::catalog
+      catalog[new_resource.path] = {
+        'etag' => response.headers[:etag].gsub('"',''),
+        'local_md5' => S3FileLib::buffered_md5_checksum(downloaded_file.path)
+      }
+      S3FileLib::write_catalog(catalog)
+    end
+
+    # Take ownership and permissions from existing object
+    if ::File.exist?(new_resource.path)
+      stat = ::File::Stat.new(new_resource.path)
+      ::FileUtils.chown(stat.uid, stat.gid, downloaded_file)
+      ::FileUtils.chmod(stat.mode, downloaded_file)
+    end
+    ::FileUtils.mv(downloaded_file.path, new_resource.path)
   end
 
   f = file new_resource.path do
     action :create
-    owner new_resource.owner || ENV['user']
-    group new_resource.group || ENV['user']
+    owner new_resource.owner || ENV['USER']
+    group new_resource.group || ENV['USER']
     mode new_resource.mode || '0644'
   end
 
