@@ -1,10 +1,10 @@
 *file
 *file.lock
-bin
+bin/*
 bundle
 chefignore
 spec
-test
+test/*
 vendor
 .git
 .*
