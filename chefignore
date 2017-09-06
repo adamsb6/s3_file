@@ -10,3 +10,4 @@ vendor
 .*
 dev.*
 *_dev
+*.iml
