@@ -1,2 +1,2 @@
-default['s3_file']['mime-types']['version'] = '2.6.2'
-default['s3_file']['rest-client']['version'] = '1.7.3'
+default['s3_file']['mime-types']['version'] = '3.1'
+default['s3_file']['rest-client']['version'] = '2.0.2'
