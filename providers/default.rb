@@ -17,7 +17,7 @@ action :create do
   token = new_resource.token
   decryption_key = new_resource.decryption_key
 
-  Chef::Log.info("credentials received [aws_access_key_id:%s, aws_secret_access_key:%s, token:%s]" % [!aws_access_key_id.nil?, !aws_secret_access_key.nil?, !token.nil?])
+  Chef::Log.debug("credentials received [aws_access_key_id:%s, aws_secret_access_key:%s, token:%s]" % [!aws_access_key_id.nil?, !aws_secret_access_key.nil?, !token.nil?])
   # if credentials not set, try instance profile
   if aws_access_key_id.nil? && aws_secret_access_key.nil? && token.nil?
     instance_profile_base_url = 'http://169.254.169.254/latest/meta-data/iam/security-credentials/'
