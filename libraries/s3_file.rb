@@ -120,7 +120,6 @@ module S3FileLib
     end
   end
 
-  s3_etag = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, public_bucket: new_resource.public_bucket)
   def self.get_md5_from_s3(bucket, url, path, *args, public_bucket: nil)
     if public_bucket
       get_digests_from_s3(bucket, url, path, public_bucket: public_bucket)["md5"]
