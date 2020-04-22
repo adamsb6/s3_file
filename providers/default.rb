@@ -56,7 +56,7 @@ action :create do
   end
 
   if ::File.exists?(new_resource.path)
-    s3_etag = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, new_resource.public_bucket)
+    s3_etag = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, public_bucket: new_resource.public_bucket)
 
     if decryption_key.nil?
       if new_resource.decrypted_file_checksum.nil?
@@ -94,7 +94,7 @@ action :create do
   end
 
   if download
-    response = S3FileLib::get_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token,region, new_resource.verify_md5, new_resource.public_bucket)
+    response = S3FileLib::get_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, region: region, verify_md5: new_resource.verify_md5, public_bucket: new_resource.public_bucket)
 
     # not simply using the file resource here because we would have to buffer
     # whole file into memory in order to set content this solves

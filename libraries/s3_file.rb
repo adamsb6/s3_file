@@ -87,7 +87,7 @@ module S3FileLib
     end
   end
 
-  def self.do_request(method, url, bucket, path, *args, public_bucket)
+  def self.do_request(method, url, bucket, path, *args, public_bucket: public_bucket)
     region = args[3]
     url = build_endpoint_url(bucket, region) if url.nil?
 
@@ -120,11 +120,12 @@ module S3FileLib
     end
   end
 
-  def self.get_md5_from_s3(bucket, url, path, *args, public_bucket)
+  s3_etag = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, public_bucket: new_resource.public_bucket)
+  def self.get_md5_from_s3(bucket, url, path, *args, public_bucket: nil)
     if public_bucket
-      get_digests_from_s3(bucket, url, path, public_bucket)["md5"]
+      get_digests_from_s3(bucket, url, path, public_bucket: public_bucket)["md5"]
     else
-      get_digests_from_s3(bucket, url, path, args[0], args[1], args[2], args[3], public_bucket)["md5"]
+      get_digests_from_s3(bucket, url, path, args[0], args[1], args[2], args[3], public_bucket: public_bucket)["md5"]
     end
   end
 
@@ -135,8 +136,8 @@ module S3FileLib
     return {"md5" => etag}.merge(digests)
   end
 
-  def self.get_digests_from_s3(bucket, url, path, *args, public_bucket,timeout=300,open_timeout=10,retries=5)
-    now, auth_string = get_s3_auth("HEAD", bucket,path,aws_access_key_id,aws_secret_access_key, token)
+  def self.get_digests_from_s3(bucket, url, path, *args, timeout: 300,open_timeout: 10, retries: 5, public_bucket: public_bucket)
+    now, auth_string = get_s3_auth("HEAD", bucket, path, args[1], args[2], args[3])
     max_tries = retries + 1
     headers = build_headers(now, auth_string, token)
     saved_exception = nil
@@ -185,15 +186,15 @@ module S3FileLib
   end
 
 
-  def self.get_from_s3(bucket, url, path, aws_access_key_id, aws_secret_access_key, token, public_bucket, verify_md5=false, region = nil)
+  def self.get_from_s3(bucket, url, path, aws_access_key_id, aws_secret_access_key, token, public_bucket: public_bucket, verify_md5: false, region: nil)
     response = nil
     retries = 5
     for attempts in 0..retries
       begin
         if public_bucket
-          response = do_request("GET", url, bucket, path, public_bucket)
+          response = do_request("GET", url, bucket, path, public_bucket: public_bucket)
         else
-          response = do_request("GET", url, bucket, path, args[0], args[1], args[2], args[3], public_bucket)
+          response = do_request("GET", url, bucket, path, args[0], args[1], args[2], args[3], public_bucket: public_bucket)
         end
         # check the length of the downloaded object,
         # make sure we didn't get nailed by
