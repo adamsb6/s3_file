@@ -27,14 +27,16 @@ action :create do
       aws_secret_access_key = ''
       token = ''
     else
+      get_token = Proc.new { client.put('http://169.254.169.254/latest/api/token/', nil, {:'X-aws-ec2-metadata-token-ttl-seconds' => '60'})&.body }
+
       instance_profile_base_url = 'http://169.254.169.254/latest/meta-data/iam/security-credentials/'
       begin
-        instance_profiles = client.get(instance_profile_base_url)
+        instance_profiles = client.get(instance_profile_base_url, {:'X-aws-ec2-metadata-token' => get_token.call()})
       rescue client::ResourceNotFound, Errno::ETIMEDOUT # set 404 on an EC2 instance
         raise ArgumentError.new 'No credentials provided and no instance profile on this machine.'
       end
       instance_profile_name = instance_profiles.split.first
-      instance_profile = JSON.load(client.get(instance_profile_base_url + instance_profile_name))
+      instance_profile = JSON.load(client.get(instance_profile_base_url + instance_profile_name), {:'X-aws-ec2-metadata-token' => get_token.call()})
 
     aws_access_key_id = instance_profile['AccessKeyId']
     aws_secret_access_key = instance_profile['SecretAccessKey']
@@ -44,8 +46,8 @@ action :create do
       if region.nil?
         dynamic_doc_base_url = 'http://169.254.169.254/latest/dynamic/instance-identity/document'
         begin
-          dynamic_doc = JSON.load(client.get(dynamic_doc_base_url))
-          region = dynamic_doc['region']
+          dynamic_doc = JSON.load(client.get(dynamic_doc_base_url, {:'X-aws-ec2-metadata-token' => get_token.call()}))
+          region = dynamic_doc && dynamic_doc['region']
         rescue Exception => e
           Chef::Log.debug "Unable to auto-detect region from instance-identity document: #{e.message}"
         end
