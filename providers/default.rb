@@ -27,14 +27,16 @@ action :create do
       aws_secret_access_key = ''
       token = ''
     else
+      get_token = Proc.new { client.put('http://169.254.169.254/latest/api/token/', nil, {:'X-aws-ec2-metadata-token-ttl-seconds' => '60'})&.body }
+
       instance_profile_base_url = 'http://169.254.169.254/latest/meta-data/iam/security-credentials/'
       begin
-        instance_profiles = client.get(instance_profile_base_url)
+        instance_profiles = client.get(instance_profile_base_url, {:'X-aws-ec2-metadata-token' => get_token.call()})
       rescue client::ResourceNotFound, Errno::ETIMEDOUT # set 404 on an EC2 instance
         raise ArgumentError.new 'No credentials provided and no instance profile on this machine.'
       end
       instance_profile_name = instance_profiles.split.first
-      instance_profile = JSON.load(client.get(instance_profile_base_url + instance_profile_name))
+      instance_profile = JSON.load(client.get(instance_profile_base_url + instance_profile_name), {:'X-aws-ec2-metadata-token' => get_token.call()})
 
     aws_access_key_id = instance_profile['AccessKeyId']
     aws_secret_access_key = instance_profile['SecretAccessKey']
@@ -44,8 +46,8 @@ action :create do
       if region.nil?
         dynamic_doc_base_url = 'http://169.254.169.254/latest/dynamic/instance-identity/document'
         begin
-          dynamic_doc = JSON.load(client.get(dynamic_doc_base_url))
-          region = dynamic_doc['region']
+          dynamic_doc = JSON.load(client.get(dynamic_doc_base_url, {:'X-aws-ec2-metadata-token' => get_token.call()}))
+          region = dynamic_doc && dynamic_doc['region']
         rescue Exception => e
           Chef::Log.debug "Unable to auto-detect region from instance-identity document: #{e.message}"
         end
@@ -54,7 +56,7 @@ action :create do
   end
 
   if ::File.exists?(new_resource.path)
-    s3_etag = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, new_resource.public_bucket)
+    s3_etag = S3FileLib::get_md5_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, public_bucket: new_resource.public_bucket)
 
     if decryption_key.nil?
       if new_resource.decrypted_file_checksum.nil?
@@ -92,7 +94,7 @@ action :create do
   end
 
   if download
-    response = S3FileLib::get_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token,region, new_resource.verify_md5, new_resource.public_bucket)
+    response = S3FileLib::get_from_s3(new_resource.bucket, new_resource.s3_url, remote_path, aws_access_key_id, aws_secret_access_key, token, region: region, verify_md5: new_resource.verify_md5, public_bucket: new_resource.public_bucket)
 
     # not simply using the file resource here because we would have to buffer
     # whole file into memory in order to set content this solves
