@@ -113,6 +113,7 @@ action :create do
       downloaded_file = decrypted_file
     else
       downloaded_file = response.file
+      downloaded_file.close unless downloaded_file.closed?
     end
 
     # Write etag and md5 to catalog for future reference
