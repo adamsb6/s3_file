@@ -83,7 +83,7 @@ action :create do
     end
 
     # Don't download if content and etag match prior download
-    if node['s3_file']['use_catalog']
+    unless !node['s3_file']['use_catalog']
       catalog_data = S3FileLib::catalog.fetch(new_resource.path, nil)
       existing_file_md5 = S3FileLib::buffered_md5_checksum(new_resource.path)
       if catalog_data && existing_file_md5 == catalog_data['local_md5'] && s3_etag == catalog_data['etag']
