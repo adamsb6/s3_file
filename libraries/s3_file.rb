@@ -78,7 +78,7 @@ module S3FileLib
   def self.with_region_detect(region = nil)
     yield(region)
   rescue client::BadRequest => e
-    if region.nil?
+    unless !region.nil?
       region = e.response.headers[:x_amz_region]
       raise if region.nil?
       yield(region)
